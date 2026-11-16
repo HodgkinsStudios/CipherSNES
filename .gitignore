@@ -1,0 +1,56 @@
+# Compiled artifacts (never commit prebuilt binaries)
+/build/
+/bin/
+/lib/
+*.o
+*.d
+*.a
+*.so
+*.so.*
+*.exe
+*.dll
+*.pdb
+*.gcda
+*.gcno
+/.pgo_profiles/
+# Local IDE state and caches
+*.cbp.user
+*.layout
+*.depend
+.cache/
+__pycache__/
+*.py[cod]
+# Private cartridges, SRAM, save states, firmware, traces, screenshots
+*.sfc
+*.smc
+*.swc
+*.fig
+*.rom
+*.srm
+*.sav
+*.state
+*.spc
+*.ips
+*.bps
+*.log
+*.ppm
+*.bmp
+/ROM*/
+/Active_Tests/
+/test_evidence/
+/screenshots/
+.DS_Store
+!/assets/CipherSNES_about.ppm
+
+# Cross-platform local work products
+/build-cmake/
+/build-win/
+/build-mac/
+/.appimage-work/
+/flatpak-build/
+/stage/
+*.AppImage
+
+/release/
+
+/build-gtk/

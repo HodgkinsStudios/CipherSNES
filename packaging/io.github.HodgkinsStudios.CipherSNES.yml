@@ -1,0 +1,46 @@
+id: io.github.HodgkinsStudios.CipherSNES
+runtime: org.gnome.Platform
+runtime-version: '50'
+sdk: org.gnome.Sdk
+command: CipherSNES-GTK
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --device=dri
+  - --env=GTK_USE_PORTAL=1
+modules:
+  - name: libarchive
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DENABLE_TEST=OFF
+      - -DENABLE_TAR=OFF
+      - -DENABLE_CPIO=OFF
+      - -DENABLE_CAT=OFF
+    sources:
+      - type: archive
+        url: https://www.libarchive.org/downloads/libarchive-3.8.6.tar.xz
+        sha256: 8ac57c1f5e99550948d1fe755c806d26026e71827da228f36bef24527e372e6f
+  - name: SDL2
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DSDL_TEST=OFF
+      - -DSDL_SHARED=ON
+      - -DSDL_STATIC=OFF
+    sources:
+      - type: archive
+        url: https://www.libsdl.org/release/SDL2-2.32.10.tar.gz
+        sha256: 5f5993c530f084535c65a6879e9b26ad441169b3e25d789d83287040a9ca5165
+  - name: ciphersnes
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCIPHERSNES_BUILD_X11=OFF
+      - -DCIPHERSNES_BUILD_GTK=ON
+    sources:
+      - type: dir
+        path: ..
+    post-install:
+      - sed -i 's/^Exec=CipherSNES /Exec=CipherSNES-GTK /' /app/share/applications/io.github.HodgkinsStudios.CipherSNES.desktop

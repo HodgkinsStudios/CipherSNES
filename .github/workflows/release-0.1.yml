@@ -1,0 +1,217 @@
+name: 0.1 release packages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: ciphersnes-release-0.1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-preflight:
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+    steps:
+      - name: Cancel superseded 0.1 workflows
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+            const {data} = await github.rest.actions.listWorkflowRunsForRepo({
+              owner, repo, branch: 'main', per_page: 100
+            });
+            for (const run of data.workflow_runs) {
+              if (run.id === context.runId || run.head_sha === context.sha ||
+                  !['0.1 release packages', 'v0.1 desktop portability (development)'].includes(run.name) ||
+                  run.status === 'completed') continue;
+              try {
+                await github.rest.actions.cancelWorkflowRun({owner, repo, run_id: run.id});
+                core.info('Cancelled superseded run ' + run.id);
+              } catch (error) {
+                core.warning('Could not cancel ' + run.id + ': ' + error.message);
+              }
+            }
+  windows-package:
+    needs: release-preflight
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-libarchive
+            mingw-w64-ucrt-x86_64-gtk3
+            mingw-w64-ucrt-x86_64-python
+            mingw-w64-ucrt-x86_64-SDL2
+            mingw-w64-ucrt-x86_64-ntldd
+      - name: Audit v0.1 branding assets
+        run: python3 packaging/verify-branding.py
+      - name: Compile and bundle Windows runtime
+        run: |
+          cmake -S . -B build-win -G Ninja -DCMAKE_BUILD_TYPE=Release -DCIPHERSNES_BUILD_X11=OFF -DCIPHERSNES_BUILD_GTK=ON
+          cmake --build build-win --parallel 2
+          bash packaging/build-windows.sh
+          test -s release/CipherSNES-v0.1-Windows-x64/CipherSNES.exe
+          test -s release/CipherSNES-v0.1-Windows-x64/assets/CipherSNES_icon.png
+          test -s release/CipherSNES-v0.1-Windows-x64/assets/CipherSNES.ico
+          test -s release/CipherSNES-v0.1-Windows-x64/share/glib-2.0/schemas/gschemas.compiled
+      - name: Archive distributable
+        shell: pwsh
+        run: |
+          Compress-Archive -Path release/CipherSNES-v0.1-Windows-x64 -DestinationPath release/CipherSNES-v0.1-Windows-x64.zip -CompressionLevel Optimal
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows-x64
+          path: release/CipherSNES-v0.1-Windows-x64.zip
+          if-no-files-found: error
+  macos-package:
+    needs: release-preflight
+    strategy:
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: brew install cmake ninja pkg-config libarchive gtk+3 sdl2 dylibbundler
+      - name: Audit v0.1 branding assets
+        run: python3 packaging/verify-branding.py
+      - name: Compile and bundle macOS app
+        run: |
+          export PKG_CONFIG_PATH="$(brew --prefix libarchive)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+          cmake -S . -B build-mac -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$(brew --prefix libarchive)" -DCIPHERSNES_BUILD_GTK=ON
+          cmake --build build-mac --parallel 2
+          bash packaging/build-macos.sh
+          test -s release/CipherSNES-v0.1-macOS-$(uname -m).zip
+          test -f build-mac/CipherSNES-GTK.app/Contents/MacOS/CipherSNES-bin
+          test -s build-mac/CipherSNES-GTK.app/Contents/Resources/CipherSNES.icns
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' build-mac/CipherSNES-GTK.app/Contents/Info.plist | grep -Fx CipherSNES.icns
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos-${{ matrix.arch }}
+          path: release/CipherSNES-v0.1-macOS-*.zip
+          if-no-files-found: error
+  appimage-package:
+    needs: release-preflight
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential libarchive-dev libx11-dev libsdl2-2.0-0 xvfb
+      - name: Fetch linuxdeploy
+        run: |
+          curl -fL --retry 3 -o /tmp/linuxdeploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod +x /tmp/linuxdeploy.AppImage
+          sudo ln -sf /tmp/linuxdeploy.AppImage /usr/local/bin/linuxdeploy
+      - name: Audit v0.1 branding assets
+        run: python3 packaging/verify-branding.py
+      - name: Build AppImage
+        run: |
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          bash packaging/build-appimage.sh
+          mkdir -p release
+          find . -maxdepth 1 -name '*.AppImage' -exec mv {} release/CipherSNES-v0.1-Linux-x86_64.AppImage \;
+          test -s release/CipherSNES-v0.1-Linux-x86_64.AppImage
+          chmod +x release/CipherSNES-v0.1-Linux-x86_64.AppImage
+      - name: Smoke-launch under virtual X11
+        run: |
+          set +e
+          APPIMAGE_EXTRACT_AND_RUN=1 xvfb-run -a timeout 8s release/CipherSNES-v0.1-Linux-x86_64.AppImage > /tmp/ciphersnes-appimage.log 2>&1
+          result=$?
+          cat /tmp/ciphersnes-appimage.log
+          test "$result" -eq 124
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-appimage-x64
+          path: release/CipherSNES-v0.1-Linux-x86_64.AppImage
+          if-no-files-found: error
+  flatpak-package:
+    needs: release-preflight
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Flatpak and GNOME SDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          flatpak --user remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak --user install -y flathub org.gnome.Platform//50 org.gnome.Sdk//50
+      - name: Audit v0.1 branding assets
+        run: python3 packaging/verify-branding.py
+      - name: Build installable Flatpak bundle
+        run: |
+          flatpak-builder --force-clean --repo=flatpak-repo flatpak-build packaging/io.github.HodgkinsStudios.CipherSNES.yml
+          mkdir -p release
+          flatpak build-bundle flatpak-repo release/CipherSNES-v0.1-Linux-x86_64.flatpak io.github.HodgkinsStudios.CipherSNES
+          test -s release/CipherSNES-v0.1-Linux-x86_64.flatpak
+      - name: Install and verify Flatpak executable
+        run: |
+          flatpak --user remote-add --if-not-exists ciphersnes-local flatpak-repo --no-gpg-verify
+          flatpak --user install -y ciphersnes-local io.github.HodgkinsStudios.CipherSNES
+          flatpak run --command=sh io.github.HodgkinsStudios.CipherSNES -c 'test -x /app/bin/CipherSNES-GTK && test -s /app/share/ciphersnes/CipherSNES_icon.png'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-flatpak-x64
+          path: release/CipherSNES-v0.1-Linux-x86_64.flatpak
+          if-no-files-found: error
+  all-platforms:
+    runs-on: ubuntu-24.04
+    needs: [windows-package, macos-package, appimage-package, flatpak-package]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: release-files
+          merge-multiple: true
+      - name: Validate all packages and assemble release ZIP
+        run: |
+          set -euo pipefail
+          test -s release-files/CipherSNES-v0.1-Windows-x64.zip
+          test -s release-files/CipherSNES-v0.1-macOS-arm64.zip
+          test -s release-files/CipherSNES-v0.1-macOS-x86_64.zip
+          test -s release-files/CipherSNES-v0.1-Linux-x86_64.AppImage
+          test -s release-files/CipherSNES-v0.1-Linux-x86_64.flatpak
+          git archive --format=zip --prefix=CipherSNES-v0.1/ HEAD > release-files/CipherSNES-v0.1-Source.zip
+          (cd release-files && sha256sum CipherSNES-v0.1-* > SHA256SUMS)
+          cat > release-files/README_RELEASE.txt <<'TXT'
+          CipherSNES v0.1 built packages
+          Windows x64: unzip Windows archive and use Run-CipherSNES.bat.
+          macOS ARM64: extract .app ZIP. Unsigned development build.
+          Linux AppImage x86_64: chmod +x, then run it under X11/XWayland.
+          Linux Flatpak x86_64: flatpak install --user ./CipherSNES-v0.1-Linux-x86_64.flatpak
+          Source ZIP contains no commercial ROMs or firmware.
+          These packages were built by CI. Game, audio, controller and clean-host compatibility must still be verified.
+          TXT
+          python3 - <<'PY'
+          import pathlib, zipfile
+          root = pathlib.Path('release-files')
+          output = pathlib.Path('CipherSNES-v0.1-All-Platforms-Release.zip')
+          with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as target:
+              for path in sorted(root.iterdir()):
+                  if path.is_file():
+                      target.write(path, arcname=path.name)
+          print(output, output.stat().st_size, 'bytes')
+          PY
+          test -s CipherSNES-v0.1-All-Platforms-Release.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CipherSNES-v0.1-All-Platforms-Release
+          path: CipherSNES-v0.1-All-Platforms-Release.zip
+          if-no-files-found: error

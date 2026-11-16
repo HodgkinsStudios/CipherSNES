@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=CipherSNES
+Comment=Super Nintendo and Super Famicom emulator
+Exec=CipherSNES %f
+Icon=io.github.HodgkinsStudios.CipherSNES
+Terminal=false
+Categories=Game;Emulator;
+MimeType=application/x-snes-rom;
+StartupNotify=true

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.HodgkinsStudios.CipherSNES</id>
+  <name>CipherSNES</name>
+  <summary>Super Nintendo and Super Famicom emulator</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>CipherSNES is an experimental Super Nintendo and Super Famicom emulator with a reusable C++17 core. Hardware accuracy and compatibility are under active development.</p>
+    <p>Cartridge files and firmware are not included.</p>
+  </description>
+  <launchable type="desktop-id">io.github.HodgkinsStudios.CipherSNES.desktop</launchable>
+  <url type="homepage">https://github.com/HodgkinsStudios/CipherSNES</url>
+  <releases><release version="0.1.0" date="2026-11-15"/></releases>
+</component>

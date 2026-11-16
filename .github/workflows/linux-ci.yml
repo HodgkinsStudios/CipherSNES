@@ -1,0 +1,36 @@
+name: Linux source build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libx11-dev libarchive-dev
+      - name: Audit branded project assets
+        run: python3 packaging/verify-branding.py
+      - name: Build X11 launcher and core libraries
+        run: make -j2 launcher core
+      - name: Check expected artifacts
+        run: |
+          test -x bin/CipherSNES
+          test -x bin/CipherSNES-NativePicker
+          test -s lib/libCipherSNESCore.a
+          test -s lib/libCipherSNESCore.so
+          test -s assets/CipherSNES_icon.png
+          test -s assets/CipherSNES_about.ppm
+      - name: Confirm cleanup
+        run: |
+          make clean
+          test ! -e build
+          test ! -e bin
+          test ! -e lib

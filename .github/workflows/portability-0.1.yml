@@ -1,0 +1,76 @@
+name: v0.1 desktop portability (development)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ciphersnes-portability-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-cmake:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build pkg-config libarchive-dev libx11-dev libgtk-3-dev libsdl2-dev
+      - name: Audit v0.1 brand assets
+        run: python3 packaging/verify-branding.py
+      - name: Configure, compile and install
+        run: |
+          cmake -S . -B build-cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCIPHERSNES_BUILD_GTK=ON
+          cmake --build build-cmake --parallel 2
+          ctest --test-dir build-cmake --output-on-failure
+          cmake --install build-cmake --prefix "$PWD/stage"
+          test -x stage/bin/CipherSNES
+          test -x stage/bin/CipherSNES-GTK
+          test -f stage/share/applications/io.github.HodgkinsStudios.CipherSNES.desktop
+  windows:
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-libarchive
+            mingw-w64-ucrt-x86_64-gtk3
+            mingw-w64-ucrt-x86_64-python
+            mingw-w64-ucrt-x86_64-SDL2
+      - name: Audit v0.1 brand assets
+        run: python3 packaging/verify-branding.py
+      - name: Configure and compile GTK/SDL frontend
+        run: |
+          cmake -S . -B build-win -G Ninja -DCMAKE_BUILD_TYPE=Release -DCIPHERSNES_BUILD_X11=OFF -DCIPHERSNES_BUILD_GTK=ON
+          cmake --build build-win --parallel 2
+          ctest --test-dir build-win --output-on-failure
+          test -f build-win/CipherSNES-GTK.exe
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: brew install cmake ninja pkg-config libarchive gtk+3 sdl2
+      - name: Audit v0.1 brand assets
+        run: python3 packaging/verify-branding.py
+      - name: Configure and compile GTK/SDL frontend
+        run: |
+          export PKG_CONFIG_PATH="$(brew --prefix libarchive)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+          cmake -S . -B build-mac -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$(brew --prefix libarchive)" -DCIPHERSNES_BUILD_X11=OFF -DCIPHERSNES_BUILD_GTK=ON
+          cmake --build build-mac --parallel 2
+          ctest --test-dir build-mac --output-on-failure
+          test -d build-mac/CipherSNES-GTK.app

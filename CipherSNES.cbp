@@ -1,0 +1,98 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CodeBlocks_project_file>
+  <FileVersion major="1" minor="6" />
+  <Project>
+    <Option title="CipherSNES - Core and Linux Frontends" />
+    <Option makefile_is_custom="1" />
+    <Option pch_mode="2" />
+    <Build>
+      <Target title="Core Static + Shared">
+        <Option output="lib/libCipherSNESCore.a" />
+        <Option type="2" />
+        <MakeCommands>
+          <Build command="make -f Makefile core" />
+          <CompileFile command="make -f Makefile core" />
+          <Clean command="make -f Makefile clean" />
+          <DistClean command="make -f Makefile clean" />
+        </MakeCommands>
+      </Target>
+      <Target title="Debug">
+        <Option output="bin/CipherSNES" />
+        <Option type="1" />
+        <MakeCommands>
+          <Build command="make -f Makefile launcher" />
+          <CompileFile command="make -f Makefile launcher" />
+          <Clean command="make -f Makefile clean" />
+          <DistClean command="make -f Makefile clean" />
+        </MakeCommands>
+      </Target>
+      <Target title="Release">
+        <Option output="bin/CipherSNES" />
+        <Option type="1" />
+        <MakeCommands>
+          <Build command="make -f Makefile release-launcher" />
+          <CompileFile command="make -f Makefile release-launcher" />
+          <Clean command="make -f Makefile clean" />
+          <DistClean command="make -f Makefile clean" />
+        </MakeCommands>
+      </Target>
+      <Target title="Optimized Core Static + Shared">
+        <Option output="lib/libCipherSNESCore.a" />
+        <Option type="2" />
+        <MakeCommands>
+          <Build command="make -f Makefile release-core" />
+          <CompileFile command="make -f Makefile release-core" />
+          <Clean command="make -f Makefile clean" />
+          <DistClean command="make -f Makefile clean" />
+        </MakeCommands>
+      </Target>
+    </Build>
+    <Unit filename="include/CipherSNES/Buttons.hpp" />
+    <Unit filename="include/CipherSNES/Core.hpp" />
+    <Unit filename="include/CipherSNES/PresentationRegion.hpp" />
+    <Unit filename="src/frontend_x11.cpp" />
+    <Unit filename="include/snes/Types.hpp" />
+    <Unit filename="include/snes/core/APU.hpp" />
+    <Unit filename="include/snes/core/Bus.hpp" />
+    <Unit filename="include/snes/core/CPU65816.hpp" />
+    <Unit filename="include/snes/core/CPU65816Bus.hpp" />
+    <Unit filename="include/snes/core/Cartridge.hpp" />
+    <Unit filename="include/snes/core/Component.hpp" />
+    <Unit filename="include/snes/core/Controller.hpp" />
+    <Unit filename="include/snes/core/Coprocessor.hpp" />
+    <Unit filename="include/snes/core/DMA.hpp" />
+    <Unit filename="include/snes/core/DSP.hpp" />
+    <Unit filename="include/snes/core/Debugger.hpp" />
+    <Unit filename="include/snes/core/EnhancementChip.hpp" />
+    <Unit filename="include/snes/core/Memory.hpp" />
+    <Unit filename="include/snes/core/OpcodeTiming.hpp" />
+    <Unit filename="include/snes/core/PPU.hpp" />
+    <Unit filename="include/snes/core/SPC700.hpp" />
+    <Unit filename="include/snes/core/SaveState.hpp" />
+    <Unit filename="include/snes/core/Scheduler.hpp" />
+    <Unit filename="include/snes/core/System.hpp" />
+    <Unit filename="include/snes/util/Sha256.hpp" />
+    <Unit filename="src/backend/core/APU.cpp" />
+    <Unit filename="src/backend/core/Bus.cpp" />
+    <Unit filename="src/backend/core/CPU65816.cpp" />
+    <Unit filename="src/backend/core/Cartridge.cpp" />
+    <Unit filename="src/backend/core/Controller.cpp" />
+    <Unit filename="src/backend/core/DMA.cpp" />
+    <Unit filename="src/backend/core/DSP.cpp" />
+    <Unit filename="src/backend/core/Debugger.cpp" />
+    <Unit filename="src/backend/core/EnhancementChip.cpp" />
+    <Unit filename="src/backend/core/Memory.cpp" />
+    <Unit filename="src/backend/core/PPU.cpp" />
+    <Unit filename="src/backend/core/SPC700.cpp" />
+    <Unit filename="src/backend/core/SaveState.cpp" />
+    <Unit filename="src/backend/core/Scheduler.cpp" />
+    <Unit filename="src/backend/core/System.cpp" />
+    <Unit filename="src/backend/util/Sha256.cpp" />
+    <Unit filename="src/core/Core.cpp" />
+    <Unit filename="src/frontend/ControllerDialog.cpp" />
+    <Unit filename="src/frontend/InputManager.cpp" />
+    <Unit filename="src/frontend/MainWindow.cpp" />
+    <Unit filename="src/frontend/main.cpp" />
+    <Extensions />
+  </Project>
+</CodeBlocks_project_file>
