@@ -60,6 +60,7 @@ jobs:
         run: |
           cmake -S . -B build-win -G Ninja -DCMAKE_BUILD_TYPE=Release -DCIPHERSNES_BUILD_X11=OFF -DCIPHERSNES_BUILD_GTK=ON
           cmake --build build-win --parallel 2
+          ctest --test-dir build-win --output-on-failure
           bash packaging/build-windows.sh
           test -s release/CipherSNES-v0.1-Windows-x64/CipherSNES.exe
           test -s release/CipherSNES-v0.1-Windows-x64/assets/CipherSNES_icon.png
@@ -95,6 +96,7 @@ jobs:
           export PKG_CONFIG_PATH="$(brew --prefix libarchive)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
           cmake -S . -B build-mac -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$(brew --prefix libarchive)" -DCIPHERSNES_BUILD_GTK=ON
           cmake --build build-mac --parallel 2
+          ctest --test-dir build-mac --output-on-failure
           bash packaging/build-macos.sh
           test -s release/CipherSNES-v0.1-macOS-$(uname -m).zip
           test -f build-mac/CipherSNES-GTK.app/Contents/MacOS/CipherSNES-bin
@@ -215,3 +217,50 @@ jobs:
           name: CipherSNES-v0.1-All-Platforms-Release
           path: CipherSNES-v0.1-All-Platforms-Release.zip
           if-no-files-found: error
+  publish-v0.1:
+    name: Publish v0.1 only after all packages passed
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [all-platforms]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: CipherSNES-v0.1-All-Platforms-Release
+          path: .
+      - name: Verify all six packaged assets and checksums before publishing
+        run: |
+          set -euo pipefail
+          test -s CipherSNES-v0.1-All-Platforms-Release.zip
+          unzip -q CipherSNES-v0.1-All-Platforms-Release.zip -d release-files
+          (cd release-files && sha256sum -c SHA256SUMS)
+          for asset in CipherSNES-v0.1-Windows-x64.zip CipherSNES-v0.1-macOS-arm64.zip CipherSNES-v0.1-macOS-x86_64.zip CipherSNES-v0.1-Linux-x86_64.AppImage CipherSNES-v0.1-Linux-x86_64.flatpak CipherSNES-v0.1-Source.zip; do
+            test -s "release-files/$asset"
+          done
+      - name: Publish GitHub v0.1 with all downloadable platforms
+        run: |
+          set -euo pipefail
+          cat > release-notes.md <<'NOTES'
+          # CipherSNES v0.1
+
+          Initial C++17 Super Nintendo / Super Famicom emulator release by HodgkinsStudios.
+
+          - Windows x64 bundled GTK3/SDL2 ZIP
+          - macOS ARM64 and Intel application ZIPs (ad-hoc signed; not notarized)
+          - Linux x86-64 AppImage and Flatpak
+          - All-platform combined release ZIP, source ZIP and SHA-256 checksums
+          - New unified CipherSNES artwork in application icons, About windows and README
+
+          The automated release gate confirms all packaging jobs and included ROM/ZIP smoke tests finished successfully. It does **not** substitute for tests of commercial games, audio, physical controllers or installation on clean end-user machines. No game ROMs or proprietary firmware are bundled.
+          NOTES
+          if gh release view v0.1 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'v0.1 release already exists; refusing to replace an existing published release.'
+            exit 1
+          fi
+          gh release create v0.1 release-files/CipherSNES-v0.1-* release-files/SHA256SUMS CipherSNES-v0.1-All-Platforms-Release.zip \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'CipherSNES v0.1' --notes-file release-notes.md
