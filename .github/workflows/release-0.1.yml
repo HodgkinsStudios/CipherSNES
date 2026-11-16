@@ -217,7 +217,7 @@ jobs:
           name: CipherSNES-v0.1-All-Platforms-Release
           path: CipherSNES-v0.1-All-Platforms-Release.zip
           if-no-files-found: error
-  publish-v0.1:
+  publish-v01:
     name: Publish v0.1 only after all packages passed
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: [all-platforms]
