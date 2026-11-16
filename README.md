@@ -8,7 +8,8 @@
 **HodgkinsStudios · C++17 · Linux · Windows · macOS**
 
 [![Linux CI](https://github.com/HodgkinsStudios/CipherSNES/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/HodgkinsStudios/CipherSNES/actions/workflows/linux-ci.yml)
-![Version](https://img.shields.io/badge/version-v0.1%20candidate-purple)
+[![Latest release](https://img.shields.io/github/v/release/HodgkinsStudios/CipherSNES?label=release)](https://github.com/HodgkinsStudios/CipherSNES/releases)
+[![Cross-platform packages](https://github.com/HodgkinsStudios/CipherSNES/actions/workflows/release-0.1.yml/badge.svg)](https://github.com/HodgkinsStudios/CipherSNES/actions/workflows/release-0.1.yml)
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-informational)
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -16,7 +17,7 @@
 
 </div>
 
-> **v0.1 release candidate:** This branch is prepared for a fresh v0.1 release. Native builds and final packages must pass GitHub Actions and platform-level testing before publishing a release. No downloadable release is claimed to exist yet.
+> **v0.1 distribution:** Download packages from [Releases](https://github.com/HodgkinsStudios/CipherSNES/releases) when available. The v0.1 release workflow publishes only after all Linux, Windows, and macOS packaging jobs, automated smoke tests, and SHA-256 validations succeed. Automated builds do not guarantee game compatibility or testing on every end-user machine.
 
 ## About
 
@@ -48,7 +49,7 @@ Features have differing degrees of completeness; see [the accuracy report](docs/
 
 The same new CipherSNES artwork is used in the README, both frontends' About windows, desktop/window icons, Windows executable resource and macOS app bundle. The previous logo is no longer part of the project.
 
-After GitHub Actions completes, download packages from the **Actions → 0.1 release packages** workflow, or attach them to the new GitHub v0.1 Release after verification. The workflow produces a combined ZIP and per-platform artifacts.
+The **Actions → 0.1 release packages** workflow builds per-platform archives and a combined ZIP. A successful run automatically publishes those files to the [v0.1 GitHub Release](https://github.com/HodgkinsStudios/CipherSNES/releases/tag/v0.1); a failing run cannot publish. Inspect CI logs and perform manual end-user testing before treating a platform as fully verified.
 
 ## Build from source
 
