@@ -2,7 +2,7 @@
 
 [Back to README](../README.md) · [Release workflows](../.github/workflows/release-0.1.yml)
 
-**Release status:** Fresh **v0.1 release candidate**. Windows/macOS/Linux release workflows are prepared. This v0.1 revision has not yet completed cross-platform GitHub Actions verification; packages are not claimed as published.
+**Release status:** The cross-platform v0.1 packaging workflow publishes release artifacts automatically **only when** all build, smoke-test and checksum jobs pass. See [GitHub Actions](https://github.com/HodgkinsStudios/CipherSNES/actions/workflows/release-0.1.yml) for current verification and [GitHub Releases](https://github.com/HodgkinsStudios/CipherSNES/releases) for published assets. An absent release means the CI gate has not yet published.
 
 A successful build or smoke test does not guarantee full compatibility on an end-user system. See [verification](#verification-pending-for-v01) and [limitations](#limitations).
 
